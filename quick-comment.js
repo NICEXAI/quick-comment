@@ -1,10 +1,11 @@
 // ==UserScript==
 // @name         快速评论，支持掘金、CSDN 和简书
 // @namespace    https://github.com/NICEXAI
-// @version      0.2
+// @version      0.3
 // @description  快速评论，支持掘金、CSDN 和简书。评论前请在 commentList 内填写你想要自动评论的内容。
 // @author       afeyer
-// @match        *://blog.csdn.net/*/article/details/*
+// @match        *://*.csdn.net/*
+// @run-at document-end
 // @icon         data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==
 // @grant        none
 // ==/UserScript==
@@ -12,6 +13,8 @@
 (function() {
     'use strict';
 
+    // 如果希望自动过滤CSDN搜索列表内的下载内容请把当前项设置为 true
+    const filterDownload = true
     // 请在此设置你想自动评论的内容，设置完毕后脚本会随机从评论列表内抽取一条自动回复
     const commentList = ["Leaflet 最新中文文档，可点击查看：https://leafletjs.cn", "Leaflet 中文文档更新了，详细内容可以查看：https://leafletjs.cn"];
 
@@ -30,6 +33,38 @@
         return button;
     }
 
+    // 过滤CSDN查询列表内的下载内容
+    const filterCSDNArticle = function() {
+        let csdnList = document.querySelectorAll(".list-container .list-item");
+        let container = document.querySelector(".list-container .so-result-list");
+        let downloadList = [];
+        let articleList = [];
+        let fragment = document.createDocumentFragment();
+
+        if(csdnList.length) {
+            for(let i = 0; i < csdnList.length; i ++) {
+                let curDom = csdnList[i]
+
+                if(!curDom.querySelector(".download-size")) {
+                    articleList.push(curDom);
+                } else {
+                    downloadList.push(curDom);
+                }
+            }
+        }
+
+        if(articleList.length && downloadList.length) {
+            for(let i = 0; i < articleList.length; i ++) {
+                fragment.appendChild(articleList[i]);
+            }
+
+            container.innerHTML = ""
+            container.appendChild(fragment)
+            console.log("filter")
+        }
+    }
+
+
     const href = window.location.href
     //往CSDN详情页面注入操作
     if(href.match(RegExp(".*blog.csdn.net/.*/article/details/.*"))) {
@@ -45,4 +80,23 @@
         let like_comment = document.getElementsByClassName('toolbox-list')[0]; //getElementsByClassName 返回的是数组，所以要用[] 下标
         like_comment.appendChild(button); //把按钮加入到 x 的子节点中
     }
+
+    // 过滤CSDN查询页内的下载内容
+    if(href.match(RegExp(".*so.csdn.net/so/search/*"))) {
+        setTimeout(function(){
+            let container = document.querySelector(".list-container .so-result-list");
+            if(!container) return;
+
+            let observer = new MutationObserver(function(){
+                filterCSDNArticle();
+            });
+            observer.observe(container, {
+                subtree: true,
+                childList: true
+            })
+
+            filterCSDNArticle()
+        }, 500)
+    }
+
 })();
