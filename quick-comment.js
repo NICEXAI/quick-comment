@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         快速评论，支持掘金、CSDN 和简书
 // @namespace    https://github.com/NICEXAI
-// @version      0.3
+// @version      0.4
 // @description  快速评论，支持掘金、CSDN 和简书。评论前请在 commentList 内填写你想要自动评论的内容。
 // @author       afeyer
 // @match        *://*.csdn.net/*
@@ -13,8 +13,10 @@
 (function() {
     'use strict';
 
-    // 如果希望自动过滤CSDN搜索列表内的下载内容请把当前项设置为 true
-    const filterDownload = true
+    // 自动过滤CSDN搜索列表内的下载内容
+    const filterDownload = true;
+    //当前评论的用户名，设置后如果当前用户已评论则不再开启快速评论
+    const commentUserName = "Afeyer";
     // 请在此设置你想自动评论的内容，设置完毕后脚本会随机从评论列表内抽取一条自动回复
     const commentList = ["Leaflet 最新中文文档，可点击查看：https://leafletjs.cn", "Leaflet 中文文档更新了，详细内容可以查看：https://leafletjs.cn"];
 
@@ -76,9 +78,23 @@
                 document.getElementsByClassName("btn-comment")[0].click(); //发表评论
             },100);// setTimeout 0.1秒后执行
         })
-
-        let like_comment = document.getElementsByClassName('toolbox-list')[0]; //getElementsByClassName 返回的是数组，所以要用[] 下标
-        like_comment.appendChild(button); //把按钮加入到 x 的子节点中
+        // 如果检测到当前页面已被评论，则无需往页面注入快捷操作
+        let commentStatus = false;
+        setTimeout(function(){
+            if(commentUserName != "") {
+                let commentUserList = document.querySelectorAll(".new-info-box .name");
+                if(commentUserList.length) {
+                    for(let i = 0; i < commentUserList.length; i ++) {
+                        if(commentUserList[i].innerText == commentUserName) {
+                            commentStatus = true
+                        }
+                    }
+                }
+            }
+            if(commentStatus) return;
+            let like_comment = document.getElementsByClassName('toolbox-list')[0]; //getElementsByClassName 返回的是数组，所以要用[] 下标
+            like_comment.appendChild(button); //把按钮加入到 x 的子节点中
+        }, 500)
     }
 
     // 过滤CSDN查询页内的下载内容
