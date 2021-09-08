@@ -1,2 +1,2 @@
 # quick-comment
-Tampermonkey script for quick comment on CSDN
+Tampermonkey script for quick comment on CSDN.
